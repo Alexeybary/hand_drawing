@@ -27,14 +27,27 @@ class DetectionHand:
         self.image_draw_width = 1000
         self.color = (0, 0, 255)
         self.radius = 4
+        self.draw = False
+        self.position = "Active"
+
+    def check_draw_position(self, res):
+        res = res[0]
+        if (res[8].y > res[5].y and res[12].y > res[9].y and
+                res[16].y > res[13].y and res[20].y > res[17].y):
+            if self.position == "Active":
+                self.position = "Pause"
+                self.draw = not self.draw
+        else:
+            self.position = "Active"
+
+    # cond_2 =
+    # return middle_finger_tip_y - index_finger_tip_y > 0.30
 
     @staticmethod
-    def check_draw_position(hand_landmarks):
+    def check_change_color(hand_landmarks):
         index_finger_tip_y = hand_landmarks[0][8].y
         middle_finger_tip_y = hand_landmarks[0][12].y
-        ring_finger_tip_y = hand_landmarks[0][16].y
-        pinky_finger_tip_y = hand_landmarks[0][20].y
-        return middle_finger_tip_y - index_finger_tip_y > 0.30
+        return index_finger_tip_y - middle_finger_tip_y > 0.30
 
     def start_draw(self, result: mp.tasks.vision.HandLandmarkerResult):
         draw_x = result.hand_landmarks[0][8].x
@@ -47,14 +60,17 @@ class DetectionHand:
 
     def make_result(self, result: mp.tasks.vision.HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int):
         """ print('---------------------------------hand landmarker result: {}'.format(result)) """
-
         if result.hand_landmarks:
             # print("index_finger_tip", result.hand_landmarks[0][8].x, result.hand_landmarks[0][8].y)
             # print("middle_finger_tip", result.hand_landmarks[0][12].x, result.hand_landmarks[0][12].y)
             # print("ring_finger_tip", result.hand_landmarks[0][16].x, result.hand_landmarks[0][16].y)
             # print("pinky_finger_tip", result.hand_landmarks[0][20].x, result.hand_landmarks[0][20].y)
-            if self.check_draw_position(result.hand_landmarks):
+            self.check_draw_position(result.hand_landmarks)
+            print(self.position, self.draw)
+            if self.draw and self.position == 'Active':
                 self.start_draw(result)
+            if self.check_change_color(result.hand_landmarks):
+                self.color = (np.random.randint(256), np.random.randint(256), np.random.randint(256))
         self.result_now = result
 
     # displaying the image
